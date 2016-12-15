@@ -1,18 +1,45 @@
 require "highline"
 require "lms_api"
 require "faker"
+require "byebug"
+
 
 module CanvasFaker
 
-  class Populate
+  class Functionality
 
     def initialize(canvas_url, token, tools = [])
       @api = LMS::Canvas.new(canvas_url, token)
       @tools = tools
+      @cli ||= HighLine.new
     end
 
-    def cli
-      @cli ||= HighLine.new
+    def setup_course
+      account_id = get_account_id
+      course_id = create_course(account_id)["id"]
+      students = create_users(account_id)
+      enroll_user_in_course(students, course_id)
+      install_lti_tool_to_course(course_id)
+    end
+
+    def delete_course
+      account_id = get_account_id
+      courses = @api.proxy(
+        "LIST_ACTIVE_COURSES_IN_ACCOUNT",
+        { account_id: account_id }
+      )
+      courses.each_with_index do |course, index|
+        puts "#{index}. #{course['name']}, id: (#{course['id']})"
+      end
+      course = @cli.ask("Delete which course? ex.. 2", Integer)
+
+      @api.proxy(
+        "CONCLUDE_COURSE",
+        { id: courses[course]["id"],
+          event: "delete"
+        }
+      )
+      puts "Deleted #{courses[course]['name']}"
     end
 
     def get_account_id
@@ -21,12 +48,12 @@ module CanvasFaker
         puts "#{index}. #{account['name']}"
       end
       # make the index dynamic to what account they choose.
-      answer = cli.ask("Install course under which account? ex.. 2", Integer)
+      answer = @cli.ask("Which account? ex.. 2", Integer)
       accounts[answer]["id"]
     end
 
     def create_course(account_id)
-      course_name = cli.ask "Name your new course."
+      course_name = @cli.ask "Name your new course."
       payload = {
         course: {
           name: course_name,
@@ -41,7 +68,7 @@ module CanvasFaker
     end
 
     def create_users(account_id)
-      num_students = cli.ask(
+      num_students = @cli.ask(
         "How many students do you want in your course?",
         Integer
       )
@@ -98,7 +125,7 @@ module CanvasFaker
         puts "#{index}. #{tool[:app][:lti_key]}"
       end
       tool_index =
-        cli.ask("Which tool do you want to add to your course?", Integer)
+        @cli.ask("Which tool do you want to add to your course?", Integer)
       tool = tools[tool_index]
       payload = {
         name: "#{tool[:app][:lti_key]}",
@@ -115,13 +142,7 @@ module CanvasFaker
       )
     end
 
-    def setup_course
-      account_id = get_account_id
-      course_id = create_course(account_id)["id"]
-      students = create_users(account_id)
-      enroll_user_in_course(students, course_id)
-      install_lti_tool_to_course(course_id)
-    end
+
   end
 
 end

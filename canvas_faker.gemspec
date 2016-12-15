@@ -7,7 +7,7 @@ require "canvas_faker/version"
 Gem::Specification.new do |spec|
   spec.name          = "canvas_faker"
   spec.version       = CanvasFaker::VERSION
-  spec.authors       = ["Justin Ball", "Ben Call"]
+  spec.authors       = ["Justin Ball", "Benjamin Call"]
   spec.email         = ["justin.ball@atomicjolt.com"]
 
   spec.summary       = "Utility for setting up courses and users in Instructure Canvas."
@@ -40,4 +40,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 1.13"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "byebug", "~> 8.2", ">= 8.2.4"
+
 end
