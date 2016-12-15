@@ -7,7 +7,7 @@ module CanvasFaker
   class Populate
 
     def initialize(canvas_url, token, tools = [])
-      @api = LMS::API.new(canvas_url, token)
+      @api = LMS::Canvas.new(canvas_url, token)
       @tools = tools
     end
 
