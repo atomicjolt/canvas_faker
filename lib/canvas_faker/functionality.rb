@@ -3,36 +3,32 @@ require "lms_api"
 require "faker"
 require "byebug"
 
-
 module CanvasFaker
 
   class Functionality
 
     def initialize(canvas_url, token, tools = [])
       @api = LMS::Canvas.new(canvas_url, token)
+      @canvas_url = canvas_url
       @tools = tools
       @cli ||= HighLine.new
     end
 
     def setup_course
       account_id = get_account_id
-      course_id = create_course(account_id)["id"]
+      courses = course_list(account_id)
+      course_id = create_course(account_id, courses)["id"]
       students = create_users(account_id)
       enroll_user_in_course(students, course_id)
+      make_assignments_in_course(course_id)
       install_lti_tool_to_course(course_id)
     end
 
     def delete_course
+      byebug
       account_id = get_account_id
-      courses = @api.proxy(
-        "LIST_ACTIVE_COURSES_IN_ACCOUNT",
-        { account_id: account_id }
-      )
-      courses.each_with_index do |course, index|
-        puts "#{index}. #{course['name']}, id: (#{course['id']})"
-      end
+      courses = course_list(account_id)
       course = @cli.ask("Delete which course? ex.. 2", Integer)
-
       @api.proxy(
         "CONCLUDE_COURSE",
         { id: courses[course]["id"],
@@ -42,29 +38,103 @@ module CanvasFaker
       puts "Deleted #{courses[course]['name']}"
     end
 
+    def get_quizzes(course_id)
+     a = @api.proxy(
+        "LIST_QUIZZES_IN_COURSE",
+        { course_id: course_id }
+      )
+      puts "QUIZ::: #{a}"
+
+    end
+
+    def delete_course_by_id(course_id)
+      @api.proxy(
+        "CONCLUDE_COURSE",
+        { id: course_id,
+          event: "delete"
+        }
+      )
+      puts "Deleted course with id: #{course_id}"
+    end
+
+    def make_assignments_in_course(course_id)
+      num_of_assignments = @cli.ask("How many assignments?", Integer)
+      create_assignments_in_course(course_id, num_of_assignments)
+    end
+
+    private
+
+    def create_assignments_in_course(course_id, num_of_assignments)
+      (1..num_of_assignments).map do
+        food = Faker::Pokemon.name
+        payload = {
+          assignment: {
+            name: "All about #{food}",
+            published: true
+          }
+        }
+        @api.proxy(
+          "CREATE_ASSIGNMENT",
+          { course_id: course_id },
+          payload
+        ).tap { |assignment| puts "Creating #{assignment['name']} in your course." }
+      end
+      puts "Added #{num_of_assignments} assignments to your course"
+    end
+
+    def course_list(account_id)
+      courses = @api.proxy(
+        "LIST_ACTIVE_COURSES_IN_ACCOUNT",
+        { account_id: account_id }
+      )
+      courses.each_with_index do |course, index|
+        puts "#{index}. #{course['name']}, id: (#{course['id']})"
+      end
+      courses
+    end
+
     def get_account_id
       accounts = @api.all_accounts # gets the accounts
       accounts.each_with_index do |account, index|
         puts "#{index}. #{account['name']}"
       end
-      # make the index dynamic to what account they choose.
       answer = @cli.ask("Which account? ex.. 2", Integer)
       accounts[answer]["id"]
     end
 
-    def create_course(account_id)
+    # Returns true or false
+    def should_create_course?(existing_course_names, course_name)
+      if existing_course_names.include?(course_name)
+        use_old_course = @cli.ask "That course already exists, want to use it? [y/n]"
+        if use_old_course == "y" || use_old_course == "yes"
+          return false
+        end
+        return true
+      end
+      return true
+    end
+
+    def create_course(account_id, courses)
+      existing_course_names = courses.map { |course| course["name"] }
       course_name = @cli.ask "Name your new course."
-      payload = {
-        course: {
-          name: course_name,
-          # sis_course_id: course_id,
+      if should_create_course?(existing_course_names, course_name)
+        payload = {
+          course: {
+            name: course_name,
+            # sis_course_id: course_id,
+          }
         }
-      }
-      @api.proxy(
-        "CREATE_NEW_COURSE",
-        { account_id: account_id },
-        payload
-      )
+        course = @api.proxy(
+          "CREATE_NEW_COURSE",
+          { account_id: account_id },
+          payload
+        )
+        puts "#{@canvas_url}/courses/#{course['id']}"
+        course
+      else
+        index = existing_course_names.find_index("#{course_name}")
+        courses[index]
+      end
     end
 
     def create_users(account_id)
@@ -141,8 +211,5 @@ module CanvasFaker
         payload
       )
     end
-
-
   end
-
 end
