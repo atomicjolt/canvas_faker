@@ -55,6 +55,6 @@ namespace :canvas_faker do
       ENV["APP_DEFAULT_CANVAS_URL"],
       ENV["CANVAS_TOKEN"]
     )
-    faker.add_students_to_course(ARGV[1], ARGV[1])
+    faker.add_students_to_course(ARGV[1], ARGV[2])
   end
 end

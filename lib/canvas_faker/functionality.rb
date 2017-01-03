@@ -148,6 +148,8 @@ module CanvasFaker
       (1..num_students).map do
         user_first_name = Faker::Name.first_name
         user_last_name = Faker::Name.last_name
+        full_name = "#{user_first_name}#{user_last_name}"
+        email = Faker::Internet.safe_email(full_name)
         payload = {
           user: {
             name: "#{user_first_name} #{user_last_name}",
@@ -160,7 +162,7 @@ module CanvasFaker
             }
           },
           pseudonym: {
-            unique_id: Faker::Internet.safe_email,
+            unique_id: "#{email}",
             password: "asdfasdf"
           }
         }
