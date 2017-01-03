@@ -49,5 +49,12 @@ namespace :canvas_faker do
     faker.get_quizzes(ARGV[1])
   end
 
-
+  desc "add students to course (account_id, course_id)"
+  task :add_students_to_course do
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    faker.add_students_to_course(ARGV[1], ARGV[1])
+  end
 end

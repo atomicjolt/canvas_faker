@@ -24,8 +24,12 @@ module CanvasFaker
       install_lti_tool_to_course(course_id)
     end
 
+    def add_students_to_course(account_id, course_id)
+      students = create_users(account_id)
+      enroll_user_in_course(students, course_id)
+    end
+
     def delete_course
-      byebug
       account_id = get_account_id
       courses = course_list(account_id)
       course = @cli.ask("Delete which course? ex.. 2", Integer)
@@ -39,12 +43,11 @@ module CanvasFaker
     end
 
     def get_quizzes(course_id)
-     a = @api.proxy(
+      a = @api.proxy(
         "LIST_QUIZZES_IN_COURSE",
         { course_id: course_id }
       )
       puts "QUIZ::: #{a}"
-
     end
 
     def delete_course_by_id(course_id)
