@@ -14,20 +14,56 @@ module CanvasFaker
       @cli ||= HighLine.new
     end
 
+    # def create_course_100(account_id)
+    #   (1..100).map.with_index do |i, index|
+    #     course_name = "Sandbox #{i}"
+    #     payload = {
+    #       course: {
+    #         name: course_name,
+    #         # sis_course_id: course_id,
+    #       }
+    #     }
+    #     course = @api.proxy(
+    #       "CREATE_NEW_COURSE",
+    #       { account_id: account_id },
+    #       payload
+    #     )
+    #     puts "#{@canvas_url}/courses/#{course['id']}"
+    #     instructor = create_instructor(account_id, i)
+    #     enroll_single_user_in_course(instructor, course["id"])
+    #   end
+    #   puts "Completed making 100 courses with 1 instructor each"
+    # end
+
     def setup_course
       account_id = get_account_id
       courses = course_list(account_id)
       course_id = create_course(account_id, courses)["id"]
-      students = create_users(account_id)
-      enroll_user_in_course(students, course_id)
+      students = create_users(account_id, custom = nil, base_email = nil, prefix = nil)
+      byebug
+      t=0
+      enroll_users_in_course(students, course_id)
       make_assignments_in_course(course_id)
       install_lti_tool_to_course(course_id)
     end
 
     def add_students_to_course(account_id, course_id)
-      students = create_users(account_id)
-      enroll_user_in_course(students, course_id)
+      num = @cli.ask "Press 1 for auto generated students and 2 for custom"
+      custom = false
+      email_base = nil
+      if num == "2"
+        email_base = @cli.ask "What email to use (ex.. ryan.jones@example.com)"
+        prefix = @cli.ask "What do you want the custom email prefix to be?"
+        custom = true
+      end
+      students = create_users(account_id, custom, email_base, prefix)
+      enroll_users_in_course(students, course_id)
     end
+
+    # def add_custom_students_to_course(account_id, course_id)
+    #   student = custom_students(account_id)
+    #   enroll_single_user_in_course(student, course_id)
+    # end
 
     def delete_course
       account_id = get_account_id
@@ -140,16 +176,50 @@ module CanvasFaker
       end
     end
 
-    def create_users(account_id)
+    # def create_instructor(account_id, i)
+    #   email = "au.instructors+#{i}@gmail.com"
+    #   user_first_name = "Instructor"
+    #   user_last_name = "#{i}"
+
+    #   payload = {
+    #     user: {
+    #       name: "#{user_first_name} #{user_last_name}",
+    #       short_name: user_first_name,
+    #       sortable_name: "#{user_last_name}, #{user_first_name}",
+    #       terms_of_use: true,
+    #       skip_registration: true,
+    #       avatar: {
+    #         url: Faker::Avatar.image
+    #       }
+    #     },
+    #     pseudonym: {
+    #       unique_id: "#{email}",
+    #       password: "training"
+    #     }
+    #   }
+    #   @api.proxy(
+    #     "CREATE_USER",
+    #     { account_id: account_id },
+    #     payload
+    #   )
+    # end
+
+    def create_users(account_id, custom, base_email, prefix)
       num_students = @cli.ask(
         "How many students do you want in your course?",
         Integer
       )
-      (1..num_students).map do
+      # students = []
+      (1..num_students).map.with_index do |num, index|
         user_first_name = Faker::Name.first_name
         user_last_name = Faker::Name.last_name
         full_name = "#{user_first_name}#{user_last_name}"
-        email = Faker::Internet.safe_email(full_name)
+         if base_email == nil
+          base_email = "testemail@example.com"
+         end
+        email_pieces = base_email.split('@')
+        custom_email = "#{email_pieces[0]}+#{prefix}#{index}@#{email_pieces[1]}"
+        email = custom ? custom_email : Faker::Internet.safe_email(full_name)
         payload = {
           user: {
             name: "#{user_first_name} #{user_last_name}",
@@ -163,18 +233,36 @@ module CanvasFaker
           },
           pseudonym: {
             unique_id: "#{email}",
-            password: "asdfasdf"
+            password: "password"
           }
         }
-        @api.proxy(
+        student = @api.proxy(
           "CREATE_USER",
           { account_id: account_id },
           payload
-        ).tap { |stud| puts "#{stud['name']} creating." }
+        ).tap { |stud| puts "#{stud['name']} creating. Password: password" }
+        # students.push(student)
       end
+      # students
     end
 
-    def enroll_user_in_course(students, course_id)
+    # def enroll_single_user_in_course(instructor, course_id)
+    #   payload = {
+    #     enrollment: {
+    #       user_id: instructor["id"],
+    #       type: "TeacherEnrollment",
+    #       enrollment_state: "active"
+    #     }
+    #   }
+    #   @api.proxy(
+    #     "ENROLL_USER_COURSES",
+    #     { course_id: course_id },
+    #     payload
+    #   )
+    #   puts "Enrolled #{instructor['name']} into your course_id #{course_id}"
+    # end
+
+    def enroll_users_in_course(students, course_id)
       students.each do |student|
         payload = {
           enrollment: {
