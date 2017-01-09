@@ -24,7 +24,21 @@ Rename .env.example to .env and provide a Canvas URL and an API Token
 
 ## Usage
 
+Run one of the following rake tasks.
 
+### Add assignments to a course
+Adds a list of dummy assignments to a course, pass the course id in as a command line argument
+```rake canvas_faker:add_assignments_to_course[course_id]```
+### add students to course (account_id, course_id)
+```rake canvas_faker:add_students_to_course```
+### Delete a course from your canvas account
+```rake canvas_faker:delete_course```
+### Delete a course from your canvas account by course_id
+```rake canvas_faker:delete_course_by_id```
+### get quizzes for course (course_id)
+```rake canvas_faker:get_quizzes```
+### Set up test course (Interactive) (new course, users, lti-tool)
+```rake canvas_faker:setup_course```
 
 ## Development
 
