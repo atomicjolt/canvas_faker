@@ -40,8 +40,6 @@ module CanvasFaker
       courses = course_list(account_id)
       course_id = create_course(account_id, courses)["id"]
       students = create_users(account_id, custom = nil, base_email = nil, prefix = nil)
-      byebug
-      t=0
       enroll_users_in_course(students, course_id)
       make_assignments_in_course(course_id)
       install_lti_tool_to_course(course_id)
