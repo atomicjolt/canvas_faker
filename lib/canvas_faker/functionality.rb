@@ -14,35 +14,14 @@ module CanvasFaker
       @cli ||= HighLine.new
     end
 
-    # def create_course_100(account_id)
-    #   (1..100).map.with_index do |i, index|
-    #     course_name = "Sandbox #{i}"
-    #     payload = {
-    #       course: {
-    #         name: course_name,
-    #         # sis_course_id: course_id,
-    #       }
-    #     }
-    #     course = @api.proxy(
-    #       "CREATE_NEW_COURSE",
-    #       { account_id: account_id },
-    #       payload
-    #     )
-    #     puts "#{@canvas_url}/courses/#{course['id']}"
-    #     instructor = create_instructor(account_id, i)
-    #     enroll_single_user_in_course(instructor, course["id"])
-    #   end
-    #   puts "Completed making 100 courses with 1 instructor each"
-    # end
-
     def setup_course
-      account_id = get_account_id
-      courses = course_list(account_id)
-      course_id = create_course(account_id, courses)["id"]
-      students = create_users(account_id, custom = nil, base_email = nil, prefix = nil)
-      enroll_users_in_course(students, course_id)
-      make_assignments_in_course(course_id)
-      install_lti_tool_to_course(course_id)
+      account_id = _get_account_id
+      courses = _course_list(account_id)
+      course_id = _create_course(account_id, courses)["id"]
+      students = _create_users(account_id, custom = nil, email_base = nil, prefix = nil)
+      _enroll_users_in_course(students, course_id)
+      _make_assignments_in_course(course_id)
+      _install_lti_tool_to_course(course_id)
     end
 
     def add_students_to_course(account_id, course_id)
@@ -54,18 +33,13 @@ module CanvasFaker
         prefix = @cli.ask "What do you want the custom email prefix to be?"
         custom = true
       end
-      students = create_users(account_id, custom, email_base, prefix)
-      enroll_users_in_course(students, course_id)
+      students = _create_users(account_id, custom, email_base, prefix)
+      _enroll_users_in_course(students, course_id)
     end
 
-    # def add_custom_students_to_course(account_id, course_id)
-    #   student = custom_students(account_id)
-    #   enroll_single_user_in_course(student, course_id)
-    # end
-
     def delete_course
-      account_id = get_account_id
-      courses = course_list(account_id)
+      account_id = _get_account_id
+      courses = _course_list(account_id)
       course = @cli.ask("Delete which course? ex.. 2", Integer)
       @api.proxy(
         "CONCLUDE_COURSE",
@@ -94,14 +68,12 @@ module CanvasFaker
       puts "Deleted course with id: #{course_id}"
     end
 
-    def make_assignments_in_course(course_id)
+    def _make_assignments_in_course(course_id)
       num_of_assignments = @cli.ask("How many assignments?", Integer)
-      create_assignments_in_course(course_id, num_of_assignments)
+      _create_assignments_in_course(course_id, num_of_assignments)
     end
 
-    private
-
-    def create_assignments_in_course(course_id, num_of_assignments)
+    def _create_assignments_in_course(course_id, num_of_assignments)
       (1..num_of_assignments).map do
         food = Faker::Pokemon.name
         payload = {
@@ -119,7 +91,7 @@ module CanvasFaker
       puts "Added #{num_of_assignments} assignments to your course"
     end
 
-    def course_list(account_id)
+    def _course_list(account_id)
       courses = @api.proxy(
         "LIST_ACTIVE_COURSES_IN_ACCOUNT",
         { account_id: account_id }
@@ -130,7 +102,7 @@ module CanvasFaker
       courses
     end
 
-    def get_account_id
+    def _get_account_id
       accounts = @api.all_accounts # gets the accounts
       accounts.each_with_index do |account, index|
         puts "#{index}. #{account['name']}"
@@ -140,7 +112,7 @@ module CanvasFaker
     end
 
     # Returns true or false
-    def should_create_course?(existing_course_names, course_name)
+    def _should_create_course?(existing_course_names, course_name)
       if existing_course_names.include?(course_name)
         use_old_course = @cli.ask "That course already exists, want to use it? [y/n]"
         if use_old_course == "y" || use_old_course == "yes"
@@ -151,10 +123,10 @@ module CanvasFaker
       return true
     end
 
-    def create_course(account_id, courses)
+    def _create_course(account_id, courses)
       existing_course_names = courses.map { |course| course["name"] }
       course_name = @cli.ask "Name your new course."
-      if should_create_course?(existing_course_names, course_name)
+      if _should_create_course?(existing_course_names, course_name)
         payload = {
           course: {
             name: course_name,
@@ -174,48 +146,20 @@ module CanvasFaker
       end
     end
 
-    # def create_instructor(account_id, i)
-    #   email = "au.instructors+#{i}@gmail.com"
-    #   user_first_name = "Instructor"
-    #   user_last_name = "#{i}"
-
-    #   payload = {
-    #     user: {
-    #       name: "#{user_first_name} #{user_last_name}",
-    #       short_name: user_first_name,
-    #       sortable_name: "#{user_last_name}, #{user_first_name}",
-    #       terms_of_use: true,
-    #       skip_registration: true,
-    #       avatar: {
-    #         url: Faker::Avatar.image
-    #       }
-    #     },
-    #     pseudonym: {
-    #       unique_id: "#{email}",
-    #       password: "training"
-    #     }
-    #   }
-    #   @api.proxy(
-    #     "CREATE_USER",
-    #     { account_id: account_id },
-    #     payload
-    #   )
-    # end
-
-    def create_users(account_id, custom, base_email, prefix)
+    def _create_users(account_id, custom, base_email, prefix)
       num_students = @cli.ask(
         "How many students do you want in your course?",
         Integer
       )
-      # students = []
-      (1..num_students).map.with_index do |num, index|
+
+      (1..num_students).map.with_index do |_num, index|
         user_first_name = Faker::Name.first_name
         user_last_name = Faker::Name.last_name
         full_name = "#{user_first_name}#{user_last_name}"
-         if base_email == nil
+        if base_email == nil
           base_email = "testemail@example.com"
-         end
-        email_pieces = base_email.split('@')
+        end
+        email_pieces = base_email.split("@")
         custom_email = "#{email_pieces[0]}+#{prefix}#{index}@#{email_pieces[1]}"
         email = custom ? custom_email : Faker::Internet.safe_email(full_name)
         payload = {
@@ -234,33 +178,15 @@ module CanvasFaker
             password: "password"
           }
         }
-        student = @api.proxy(
+        @api.proxy(
           "CREATE_USER",
           { account_id: account_id },
           payload
         ).tap { |stud| puts "#{stud['name']} creating. Password: password" }
-        # students.push(student)
       end
-      # students
     end
 
-    # def enroll_single_user_in_course(instructor, course_id)
-    #   payload = {
-    #     enrollment: {
-    #       user_id: instructor["id"],
-    #       type: "TeacherEnrollment",
-    #       enrollment_state: "active"
-    #     }
-    #   }
-    #   @api.proxy(
-    #     "ENROLL_USER_COURSES",
-    #     { course_id: course_id },
-    #     payload
-    #   )
-    #   puts "Enrolled #{instructor['name']} into your course_id #{course_id}"
-    # end
-
-    def enroll_users_in_course(students, course_id)
+    def _enroll_users_in_course(students, course_id)
       students.each do |student|
         payload = {
           enrollment: {
@@ -278,7 +204,7 @@ module CanvasFaker
       end
     end
 
-    def install_lti_tool_to_course(course_id)
+    def _install_lti_tool_to_course(course_id)
       return if @tools.empty?
       # Taken from canvas documentation, below.
       # https://canvas.instructure.com/doc/api/external_tools.html
