@@ -30,13 +30,22 @@ namespace :canvas_faker do
     faker.delete_course_by_id(args[:a1])
   end
 
-  desc "Add assignments to a course, param (course_id)"
+  desc "Delete an assignment from your course by (course_id, assignment_id)"
+  task :delete_assignment_by_id, [:a1, :a2] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    faker.delete_assignment_by_id(args[:a1].to_i, args[:a2].to_i)
+  end
+
+  desc "Add assignments to a course (course_id)"
   task :add_assignments_to_course, [:a1] do |t, args|
     faker = CanvasFaker::Functionality.new(
       ENV["APP_DEFAULT_CANVAS_URL"],
       ENV["CANVAS_TOKEN"]
     )
-    faker.add_assignments_to_course(args[:a1])
+    faker.add_assignments_to_course(args[:a1].to_i)
   end
 
   desc "get quizzes for course (course_id)"
@@ -56,4 +65,41 @@ namespace :canvas_faker do
     )
     faker.add_students_to_course(args[:a1].to_i, args[:a2].to_i)
   end
+
+  # desc "get survey results.. (course_id)"
+  # task :survey_from_account do |t, args|
+  #   faker = CanvasFaker::Functionality.new(
+  #     ENV["APP_DEFAULT_CANVAS_URL"],
+  #     ENV["CANVAS_TOKEN"]
+  #   )
+  #   faker.survey_from_account(245)
+  # end
+
+  desc "get courses by user_id"
+  task :get_courses_user, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    faker.get_courses_user(args[:a1].to_i)
+  end
+
+  desc "copy content into course (source_course_id, course_id)"
+  task :copy_content_to_course, [:a1, :a2] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    faker.copy_content_to_course(args[:a1].to_i, args[:a2].to_i)
+  end
+
+  desc "generate page view analytics (course_id)"
+  task :create_page_analytics, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    faker.create_page_analytics(args[:a1].to_i)
+  end
+
 end

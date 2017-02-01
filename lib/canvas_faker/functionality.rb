@@ -37,6 +37,43 @@ module CanvasFaker
       _enroll_users_in_course(students, course_id)
     end
 
+    def get_courses_user(user_id)
+
+      result = @api.proxy(
+        "LIST_COURSES_FOR_USER",
+        { user_id: user_id }
+      )
+    end
+
+    def create_page_analytics(course_id)
+      generate = _view_pages(course_id)
+    end
+
+    def copy_content_to_course(source_course_id, course_id)
+      copy = _create_content_migration_course(source_course_id, course_id)
+    end
+
+    # def survey_from_account(course_id)
+    #   # survey = @api.proxy(
+    #   #   "LIST_QUIZZES_IN_COURSE",
+    #   #   { course_id: course_id },
+    #   #   { search_term: "Course" }
+    #   # )
+    #   # sur = survey[0]
+
+    #   result = @api.proxy(
+    #     "GET_ALL_QUIZ_SUBMISSIONS",
+    #     { course_id: course_id, quiz_id: 4975 }
+    #   )
+    #   result = result["quiz_submissions"][0]
+    #   byebug
+    #   t=0
+    #   real = @api.proxy(
+    #     "GET_ALL_QUIZ_SUBMISSION_QUESTIONS",
+    #     { quiz_submission_id: 123 }
+    #   )
+    # end
+
     def delete_course
       account_id = _get_account_id
       courses = _course_list(account_id)
@@ -58,7 +95,18 @@ module CanvasFaker
       puts "QUIZ::: #{a}"
     end
 
+    def delete_assignment_by_id(course_id, assignment_id)
+      @api.proxy(
+        "DELETE_ASSIGNMENT",
+        { course_id: course_id,
+          id: assignment_id,
+        }
+      )
+    end
+
     def delete_course_by_id(course_id)
+      # become_user_id 684
+      # 1328 course
       @api.proxy(
         "CONCLUDE_COURSE",
         { id: course_id,
@@ -202,6 +250,61 @@ module CanvasFaker
         )
         puts "Enrolled #{student['name']} into your course_id #{course_id}"
       end
+    end
+
+    def _create_content_migration_course(source_course_id, course_id)
+      payload = {
+        migration_type: "course_copy_importer",
+        settings: {
+          source_course_id: source_course_id
+        },
+        date_shift_options: {
+          shift_dates: true
+        }
+      }
+
+      @api.proxy(
+        "CREATE_CONTENT_MIGRATION_COURSES",
+        { course_id: course_id },
+        payload
+      )
+      puts "Copied content from course_id: #{source_course_id} to #{course_id} "
+    end
+
+    def _view_pages(course_id)
+      course_pages = []
+      viewed_pages = []
+      students_in_course = @api.proxy(
+        "LIST_USERS_IN_COURSE_USERS",
+        {
+          course_id: course_id,
+          enrollment_type: ["student"],
+          per_page: 100
+        }
+      )
+      students_in_course.each do |student|
+        user_id = student["id"]
+        # will error if no "Front Page" is marked in pages tab.
+        puts "Creating stats for #{student['name']}"
+        viewed_pages << @api.proxy("SHOW_FRONT_PAGE_COURSES", { course_id: course_id, as_user_id: user_id })
+        course_pages = @api.proxy("LIST_PAGES_COURSES", { course_id: course_id, as_user_id: user_id })
+        course_pages = course_pages.sample(rand(0..course_pages.count))
+        course_pages.each do |course_page|
+          viewed_pages << @api.proxy("SHOW_PAGE_COURSES", { course_id: course_id, url: course_page['url'], as_user_id: user_id })
+        end
+        viewed_pages
+      end
+      puts "Posting a discussion from first student so analytics will be updated."
+      @api.proxy(
+        "CREATE_NEW_DISCUSSION_TOPIC_COURSES",
+        {
+          course_id: course_id,
+          title: "Saves Analytics",
+          message: "Generated from rake task",
+          published: true,
+          as_user_id: students_in_course[0]["id"]
+        }
+      )
     end
 
     def _install_lti_tool_to_course(course_id)
