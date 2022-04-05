@@ -85,6 +85,21 @@ module CanvasFaker
       result
     end
 
+    def create_course(account_id, params)
+      payload = {
+        course: {
+          name: params[:name],
+          # sis_course_id: course_id,
+        }
+      }
+      course = @api.proxy(
+        "CREATE_NEW_COURSE",
+        { account_id: account_id },
+        payload
+      )
+    end
+
+
     def create_page_analytics(course_id)
       generate = _view_pages(course_id)
     end

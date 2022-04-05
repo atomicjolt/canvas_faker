@@ -99,6 +99,23 @@ namespace :canvas_faker do
     pp reportable_results
   end
 
+  desc "create courses in account"
+  task :create_account_courses, [:account_id, :num_courses, :course_base_name] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+
+    account_id = args[:account_id].to_i
+    num_courses = args[:num_courses].to_i
+    base_name = args[:course_base_name] || "Test Course"
+
+    (1..num_courses).each do |i|
+      course = faker.create_course(args[:account_id], {name: "#{base_name} #{i}"})
+      puts "Created course: #{course["id"]} - #{course["name"]}"
+    end
+  end
+
   desc "get blueprint courses by account_id"
   task :get_blueprint_courses_account, [:a1] do |t, args|
     faker = CanvasFaker::Functionality.new(
