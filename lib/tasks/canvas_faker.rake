@@ -166,6 +166,16 @@ namespace :canvas_faker do
     faker.update_associated_courses(args[:course_id], ids_to_add || [], ids_to_remove || [])
   end
 
+ desc "sync blueprint course"
+  task :sync_blueprint_course, [:course_id] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+
+    faker.sync_to_associated_courses(args[:course_id])
+  end
+
   desc "copy content into course (source_course_id, course_id)"
   task :copy_content_to_course, [:a1, :a2] do |t, args|
     faker = CanvasFaker::Functionality.new(

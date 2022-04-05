@@ -65,6 +65,14 @@ module CanvasFaker
       result
     end
 
+    def sync_to_associated_courses(course_id)
+      result = @api.proxy(
+        "BEGIN_MIGRATION_TO_PUSH_TO_ASSOCIATED_COURSES",
+        { course_id: course_id, template_id: 'default' }
+      )
+      result
+    end
+
     def get_courses_account(account_id)
 
       result = @api.proxy(
