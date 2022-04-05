@@ -159,9 +159,17 @@ module CanvasFaker
       )
     end
 
+    def delete_single_course_by_id(course_id)
+      @api.proxy(
+        "DELETE_CONCLUDE_COURSE",
+        { id: course_id,
+          event: "delete"
+        }
+      )
+      puts "Deleted course with id: #{course_id}"
+    end
+
     def delete_course_by_id(course_id)
-      # become_user_id 684
-      # 1328 course
       @api.proxy(
         "CONCLUDE_COURSE",
         { id: course_id,

@@ -160,6 +160,20 @@ namespace :canvas_faker do
     end
   end
 
+ desc "Delete courses"
+  task :delete_account_courses, [:filename] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    content = File.read(args[:filename])
+    id_list = JSON.parse(content)
+    id_list.each do |id|
+      raise "Course id: #{id} must be an integer" if !id.is_a? Integer
+      faker.delete_single_course_by_id(id)
+    end
+  end
+
  desc "update blueprint associations"
   task :update_blueprint_associations, [:course_id, :ids_to_add_file, :ids_to_remove_file] do |t, args|
     faker = CanvasFaker::Functionality.new(
