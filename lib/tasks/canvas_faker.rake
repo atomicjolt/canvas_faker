@@ -143,6 +143,29 @@ namespace :canvas_faker do
     end
   end
 
+ desc "update blueprint associations"
+  task :update_blueprint_associations, [:course_id, :ids_to_add_file, :ids_to_remove_file] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+
+
+    ids_to_add = if args[:ids_to_add_file].present?
+      JSON.parse(File.read(args[:ids_to_add_file]))
+    else
+      nil
+    end
+
+    ids_to_remove =if args[:ids_to_remove_file].present?
+      JSON.parse(File.read(args[:ids_to_remove_file]))
+    else
+      nil
+    end
+
+    faker.update_associated_courses(args[:course_id], ids_to_add || [], ids_to_remove || [])
+  end
+
   desc "copy content into course (source_course_id, course_id)"
   task :copy_content_to_course, [:a1, :a2] do |t, args|
     faker = CanvasFaker::Functionality.new(

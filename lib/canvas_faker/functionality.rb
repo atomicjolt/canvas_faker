@@ -53,6 +53,18 @@ module CanvasFaker
       result
     end
 
+    def update_associated_courses(course_id, course_ids_to_add, course_ids_to_remove)
+      result = @api.proxy(
+        "UPDATE_ASSOCIATED_COURSES",
+        { course_id: course_id, template_id: 'default' },
+        {
+          course_ids_to_add: course_ids_to_add,
+          course_ids_to_remove: course_ids_to_remove
+        }
+      )
+      result
+    end
+
     def get_courses_account(account_id)
 
       result = @api.proxy(
