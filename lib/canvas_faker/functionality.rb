@@ -45,6 +45,14 @@ module CanvasFaker
       )
     end
 
+    def reset_course(course_id)
+      result = @api.proxy(
+        "RESET_COURSE",
+        { course_id: course_id }
+      )
+      result
+    end
+
     def get_courses_account(account_id)
 
       result = @api.proxy(

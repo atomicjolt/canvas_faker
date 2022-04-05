@@ -113,7 +113,7 @@ namespace :canvas_faker do
   end
 
  desc "get non_blueprint courses by account_id"
-  task :get_non_blueprint_courses_account, [:a1] do |t, args|
+  task :get_non_blueprint_courses_account, [:a1, :json_only] do |t, args|
     faker = CanvasFaker::Functionality.new(
       ENV["APP_DEFAULT_CANVAS_URL"],
       ENV["CANVAS_TOKEN"]
@@ -122,7 +122,25 @@ namespace :canvas_faker do
     blueprint_courses = results.filter {|r| !r["blueprint"]}
     reportable_results = blueprint_courses.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
     puts reportable_results.to_json
-    pp reportable_results
+
+    pp reportable_results if(!args[:json_only])
+  end
+
+ desc "reset courses"
+  task :reset_courses, [:filename] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    content = File.read(args[:filename])
+    id_list = JSON.parse(content)
+    responses = []
+    id_list.each do |id|
+      raise "Course id: #{id} must be an integer" if !id.is_a? Integer
+      response = faker.reset_course(id)
+      responses << response
+      puts "Reset: #{id}" if response.code >= 200
+    end
   end
 
   desc "copy content into course (source_course_id, course_id)"
