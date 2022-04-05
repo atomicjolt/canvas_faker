@@ -81,7 +81,20 @@ namespace :canvas_faker do
       ENV["APP_DEFAULT_CANVAS_URL"],
       ENV["CANVAS_TOKEN"]
     )
-    faker.get_courses_user(args[:a1].to_i)
+    results = faker.get_courses_user(args[:a1].to_i)
+    reportable_results = results.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    pp reportable_results
+  end
+
+  desc "get courses by account_id"
+  task :get_courses_account, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    results = faker.get_courses_account(args[:a1].to_i)
+    reportable_results = results.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    pp reportable_results
   end
 
   desc "copy content into course (source_course_id, course_id)"

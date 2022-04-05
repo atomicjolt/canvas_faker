@@ -39,10 +39,22 @@ module CanvasFaker
 
     def get_courses_user(user_id)
 
-      result = @api.proxy(
+      @api.proxy(
         "LIST_COURSES_FOR_USER",
         { user_id: user_id }
       )
+    end
+
+    def get_courses_account(account_id)
+
+      result = @api.proxy(
+        "LIST_ACTIVE_COURSES_IN_ACCOUNT",
+        { account_id: account_id },
+        payload = nil,
+        get_all = true
+      )
+
+      result
     end
 
     def create_page_analytics(course_id)
