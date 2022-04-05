@@ -83,6 +83,7 @@ namespace :canvas_faker do
     )
     results = faker.get_courses_user(args[:a1].to_i)
     reportable_results = results.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
     pp reportable_results
   end
 
@@ -94,6 +95,33 @@ namespace :canvas_faker do
     )
     results = faker.get_courses_account(args[:a1].to_i)
     reportable_results = results.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
+    pp reportable_results
+  end
+
+  desc "get blueprint courses by account_id"
+  task :get_blueprint_courses_account, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    results = faker.get_courses_account(args[:a1].to_i)
+    blueprint_courses = results.filter {|r| r["blueprint"]}
+    reportable_results = blueprint_courses.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
+    pp reportable_results
+  end
+
+ desc "get non_blueprint courses by account_id"
+  task :get_non_blueprint_courses_account, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    results = faker.get_courses_account(args[:a1].to_i)
+    blueprint_courses = results.filter {|r| !r["blueprint"]}
+    reportable_results = blueprint_courses.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
     pp reportable_results
   end
 
