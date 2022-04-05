@@ -39,11 +39,66 @@ module CanvasFaker
 
     def get_courses_user(user_id)
 
-      result = @api.proxy(
+      @api.proxy(
         "LIST_COURSES_FOR_USER",
         { user_id: user_id }
       )
     end
+
+    def reset_course(course_id)
+      result = @api.proxy(
+        "RESET_COURSE",
+        { course_id: course_id }
+      )
+      result
+    end
+
+    def update_associated_courses(course_id, course_ids_to_add, course_ids_to_remove)
+      result = @api.proxy(
+        "UPDATE_ASSOCIATED_COURSES",
+        { course_id: course_id, template_id: 'default' },
+        {
+          course_ids_to_add: course_ids_to_add,
+          course_ids_to_remove: course_ids_to_remove
+        }
+      )
+      result
+    end
+
+    def sync_to_associated_courses(course_id)
+      result = @api.proxy(
+        "BEGIN_MIGRATION_TO_PUSH_TO_ASSOCIATED_COURSES",
+        { course_id: course_id, template_id: 'default' }
+      )
+      result
+    end
+
+    def get_courses_account(account_id)
+
+      result = @api.proxy(
+        "LIST_ACTIVE_COURSES_IN_ACCOUNT",
+        { account_id: account_id },
+        payload = nil,
+        get_all = true
+      )
+
+      result
+    end
+
+    def create_course(account_id, params)
+      payload = {
+        course: {
+          name: params[:name],
+          # sis_course_id: course_id,
+        }
+      }
+      course = @api.proxy(
+        "CREATE_NEW_COURSE",
+        { account_id: account_id },
+        payload
+      )
+    end
+
 
     def create_page_analytics(course_id)
       generate = _view_pages(course_id)
@@ -104,9 +159,17 @@ module CanvasFaker
       )
     end
 
+    def delete_single_course_by_id(course_id)
+      @api.proxy(
+        "DELETE_CONCLUDE_COURSE",
+        { id: course_id,
+          event: "delete"
+        }
+      )
+      puts "Deleted course with id: #{course_id}"
+    end
+
     def delete_course_by_id(course_id)
-      # become_user_id 684
-      # 1328 course
       @api.proxy(
         "CONCLUDE_COURSE",
         { id: course_id,

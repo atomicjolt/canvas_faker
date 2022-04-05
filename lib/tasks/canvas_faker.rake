@@ -81,7 +81,130 @@ namespace :canvas_faker do
       ENV["APP_DEFAULT_CANVAS_URL"],
       ENV["CANVAS_TOKEN"]
     )
-    faker.get_courses_user(args[:a1].to_i)
+    results = faker.get_courses_user(args[:a1].to_i)
+    reportable_results = results.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
+    pp reportable_results
+  end
+
+  desc "get courses by account_id"
+  task :get_courses_account, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    results = faker.get_courses_account(args[:a1].to_i)
+    reportable_results = results.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
+    pp reportable_results
+  end
+
+  desc "create courses in account"
+  task :create_account_courses, [:account_id, :num_courses, :course_base_name] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+
+    account_id = args[:account_id].to_i
+    num_courses = args[:num_courses].to_i
+    base_name = args[:course_base_name] || "Test Course"
+
+    (1..num_courses).each do |i|
+      course = faker.create_course(args[:account_id], {name: "#{base_name} #{i}"})
+      puts "Created course: #{course["id"]} - #{course["name"]}"
+    end
+  end
+
+  desc "get blueprint courses by account_id"
+  task :get_blueprint_courses_account, [:a1] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    results = faker.get_courses_account(args[:a1].to_i)
+    blueprint_courses = results.filter {|r| r["blueprint"]}
+    reportable_results = blueprint_courses.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
+    pp reportable_results
+  end
+
+ desc "get non_blueprint courses by account_id"
+  task :get_non_blueprint_courses_account, [:a1, :json_only] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    results = faker.get_courses_account(args[:a1].to_i)
+    blueprint_courses = results.filter {|r| !r["blueprint"]}
+    reportable_results = blueprint_courses.map { |r| {id: r["id"], account_id: r["account_id"], name: r["name"]}}
+    puts reportable_results.to_json
+
+    pp reportable_results if(!args[:json_only])
+  end
+
+ desc "reset courses"
+  task :reset_courses, [:filename] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    content = File.read(args[:filename])
+    id_list = JSON.parse(content)
+    responses = []
+    id_list.each do |id|
+      raise "Course id: #{id} must be an integer" if !id.is_a? Integer
+      response = faker.reset_course(id)
+      responses << response
+      puts "Reset: #{id}" if response.code >= 200
+    end
+  end
+
+ desc "Delete courses"
+  task :delete_account_courses, [:filename] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+    content = File.read(args[:filename])
+    id_list = JSON.parse(content)
+    id_list.each do |id|
+      raise "Course id: #{id} must be an integer" if !id.is_a? Integer
+      faker.delete_single_course_by_id(id)
+    end
+  end
+
+ desc "update blueprint associations"
+  task :update_blueprint_associations, [:course_id, :ids_to_add_file, :ids_to_remove_file] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+
+
+    ids_to_add = if args[:ids_to_add_file].present?
+      JSON.parse(File.read(args[:ids_to_add_file]))
+    else
+      nil
+    end
+
+    ids_to_remove =if args[:ids_to_remove_file].present?
+      JSON.parse(File.read(args[:ids_to_remove_file]))
+    else
+      nil
+    end
+
+    faker.update_associated_courses(args[:course_id], ids_to_add || [], ids_to_remove || [])
+  end
+
+ desc "sync blueprint course"
+  task :sync_blueprint_course, [:course_id] do |t, args|
+    faker = CanvasFaker::Functionality.new(
+      ENV["APP_DEFAULT_CANVAS_URL"],
+      ENV["CANVAS_TOKEN"]
+    )
+
+    faker.sync_to_associated_courses(args[:course_id])
   end
 
   desc "copy content into course (source_course_id, course_id)"
